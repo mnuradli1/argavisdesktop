@@ -33,6 +33,10 @@ const skipWebUi = process.argv.includes("--skip-web-ui")
 const solidPlugin = createSolidTransformPlugin()
 const highlights = Script.preview ? undefined : embed(process.env.OPENCODE_RELEASE_NOTES)
 const releaseAssets = new Map<string, Promise<Map<string, string>>>()
+// Inlined so the bundled server reaches the built-in Argavis provider with no setup. Bun loads it from the
+// gitignored packages/cli/.env.local when this script runs from packages/cli; it must never be committed.
+const argavisKey = process.env.ARGAVIS_API_KEY
+console.log(argavisKey ? "Argavis API key embedded" : "Argavis API key missing: the build exposes catalog providers")
 
 const allTargets: {
   os: string
@@ -197,6 +201,7 @@ export default { path: file, version: ${JSON.stringify(opencodePty.version)}, sh
       // FFF_LIBC selects the fff native lib variant: "musl" or "gnu".
       FFF_LIBC: item.os === "linux" ? `'${item.abi ?? "gnu"}'` : "undefined",
       ...(item.os === "linux" ? { "process.env.OPENTUI_LIBC": JSON.stringify(item.abi ?? "glibc") } : {}),
+      ...(argavisKey ? { "process.env.ARGAVIS_API_KEY": JSON.stringify(argavisKey) } : {}),
     },
   })
 

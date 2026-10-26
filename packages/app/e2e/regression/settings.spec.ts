@@ -470,8 +470,8 @@ test.describe("pages open before slow data", () => {
       await expect(settings.getByRole("link", { name: "935 others", exact: true })).toBeVisible()
       await expect(settings.getByRole("button", { name: "Back to app" })).toBeVisible()
 
-      const website = settings.getByRole("link", { name: "www.opencode.ai", exact: true })
-      await website.focus()
+      const notices = settings.getByRole("button", { name: "Third-party notices", exact: true })
+      await notices.focus()
 
       const settled = fails
         ? page.waitForEvent("requestfailed", (request) => request.url() === contributors)
@@ -480,7 +480,7 @@ test.describe("pages open before slow data", () => {
       gate.resolve()
       await settled
       await expect(settings.getByRole("link", { name: fails ? "935 others" : "988 others", exact: true })).toBeVisible()
-      await expect(website).toBeFocused()
+      await expect(notices).toBeFocused()
     })
   }
 })

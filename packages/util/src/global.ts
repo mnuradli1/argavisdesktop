@@ -9,7 +9,9 @@ import { roots } from "#global-roots"
 import { Flock } from "./flock.js"
 import { makeGlobalNode } from "./effect/app-node.js"
 
-const app = "opencode"
+// Argavis keeps its state, data, config, and caches apart from an installed OpenCode, including the
+// background-service registration. Keep in sync with the client's default registration file.
+const app = "argavis"
 const { data, cache, config, state, tmp } = roots(app)
 
 const paths = {

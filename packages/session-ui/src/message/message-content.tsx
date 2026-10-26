@@ -73,7 +73,10 @@ function modelLabel(
   i18n: ReturnType<typeof useI18n>,
   model: SessionMessageAssistant["model"],
 ) {
-  const name = data.store.provider?.all?.get(model.providerID)?.models?.[model.id]?.name ?? model.id
+  // Argavis names only the models it offers, so a message from any other model shows no model label.
+  const name = data.store.provider?.all?.get(model.providerID)?.models?.[model.id]?.name
+
+  if (!name) return ""
 
   if (!model.variant || model.variant === "default") return name
 

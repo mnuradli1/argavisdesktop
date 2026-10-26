@@ -239,7 +239,7 @@
 }
 
 .settings-about-wordmark {
-  width: 178px;
+  width: 155.4px;
   height: 32px;
   flex-shrink: 0;
   opacity: 0.2;
@@ -251,7 +251,6 @@
   opacity: 0.3;
 }
 
-.settings-about-faint,
 .settings-about-credits {
   color: var(--v2-text-text-faint);
 }

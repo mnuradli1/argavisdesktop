@@ -3,10 +3,10 @@ export * as Database from "./database.js"
 import { EffectDrizzleSqlite } from "./drizzle.js"
 import { sqliteLayer, supportsForeignKeyToggle, supportsTuningPragmas } from "#sqlite"
 import { Context, Effect, Layer, Schema, Semaphore } from "effect"
-import type { SqlClient } from "effect/sql"
+import { SqlClient } from "effect/sql"
 import { Global } from "@opencode/util/global"
 import { closeSync, existsSync, openSync } from "node:fs"
-import { chmod } from "node:fs/promises"
+import { chmod, rename, rm } from "node:fs/promises"
 import { isAbsolute, join } from "path"
 import { DatabaseMigration } from "./migration.js"
 import { makeGlobalNode } from "@opencode/util/effect/app-node"
@@ -20,6 +20,8 @@ export interface Interface {
 
 export const Options = Schema.Struct({
   path: Schema.optional(Schema.String),
+  /** A database file copied over `path` once, before first use, while `path` holds no sessions. */
+  seed: Schema.optional(Schema.String),
 })
 export type Options = typeof Options.Type
 
@@ -74,6 +76,7 @@ export function layer(options: Options = { path: ":memory:" }) {
       const filename = options.path ?? ":memory:"
       if (filename === ":memory:") return provide(filename)
       const file = isAbsolute(filename) ? filename : join((yield* Global.Service).data, filename)
+      if (options.seed && options.seed !== file) yield* lockFor(file).withPermit(seed(file, options.seed))
       yield* Effect.promise(() => restrictToOwner(file))
       return provide(file)
     }),
@@ -96,6 +99,53 @@ async function restrictToOwner(filename: string) {
     ),
   )
 }
+
+// The marker beside the database records that the copy was decided, so deleting every session later
+// does not bring the source back.
+const seed = Effect.fnUntraced(
+  function* (file: string, source: string) {
+    const marker = `${file}-seeded`
+    if (existsSync(marker)) return
+    if ((yield* hasSessions(source)) && !(yield* hasSessions(file))) {
+      const temp = `${file}.seed`
+      yield* Effect.promise(() => rm(temp, { force: true }))
+      // VACUUM INTO writes a consistent snapshot even while another process writes the source.
+      yield* query(source, readOnly, (sql) => sql.unsafe("VACUUM INTO ?", [temp]))
+      // Execution claims belong to the source's server. The restart sweep here would rerun those turns.
+      yield* query(temp, {}, (sql) => sql.unsafe("UPDATE session_v2 SET time_suspended = NULL, resume_attempts = 0"))
+      // SQLite would replay the replaced database's WAL onto the copy.
+      yield* Effect.promise(() => Promise.all(["-wal", "-shm"].map((suffix) => rm(file + suffix, { force: true }))))
+      yield* Effect.promise(() => rename(temp, file))
+      yield* Effect.logInfo("database seeded", { file, source })
+    }
+    closeSync(openSync(marker, "a", 0o600))
+  },
+  Effect.catchCause((cause) => Effect.logWarning("database seed failed", { cause })),
+)
+
+const hasSessions = (filename: string) =>
+  existsSync(filename)
+    ? query(filename, readOnly, (sql) =>
+        Effect.gen(function* () {
+          const table = yield* sql.unsafe("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'session_v2'")
+          if (table.length === 0) return false
+          return (yield* sql.unsafe("SELECT 1 FROM session_v2 LIMIT 1")).length > 0
+        }),
+      )
+    : Effect.succeed(false)
+
+// Bun opens read-write unless both flags are off, whatever `readonly` says.
+const readOnly = { readonly: true, readwrite: false, create: false }
+
+const query = <A, E>(
+  filename: string,
+  options: { readonly?: boolean; readwrite?: boolean; create?: boolean },
+  use: (sql: SqlClient.SqlClient) => Effect.Effect<A, E>,
+) =>
+  Effect.gen(function* () {
+    const sql = yield* SqlClient.SqlClient
+    return yield* use(sql)
+  }).pipe(Effect.provide(sqliteLayer({ filename, ...options, disableWAL: true })))
 
 // The database service over an injected SqlClient, for runtimes that receive
 // database storage instead of opening a filesystem path. Any client provided

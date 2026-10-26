@@ -1,4 +1,3 @@
-import { useDialog } from "@opencode/ui/context/dialog"
 import { Tooltip } from "@opencode/ui/tooltip"
 import { Icon } from "@opencode/ui/icon"
 import { Show, createMemo, createSignal } from "solid-js"
@@ -14,8 +13,6 @@ import {
   type PromptProjectController,
 } from "@/new-session/project/selector"
 import { useLanguage } from "@/runtime/i18n/language"
-import { useWorkspaceLocation } from "@/workspaces/location"
-import { useProviders } from "@/providers/catalog/providers"
 import { NEW_SESSION_CONTENT_WIDTH } from "@/new-session/layout"
 import { Persist, persisted } from "@/runtime/persistence/storage"
 import { Persistence } from "@/runtime/persistence/schema"
@@ -102,8 +99,6 @@ export function NewSessionView(props: {
           </div>
         </div>
         <NewSessionTips
-          selection={props.composer.model.selection}
-          onDone={props.composer.restoreFocus}
           workspaceEligible={
             !!props.project.selected() &&
             props.workspace.bar.visible() &&
@@ -117,22 +112,9 @@ export function NewSessionView(props: {
   )
 }
 
-function NewSessionTips(props: {
-  selection: ComposerModel["model"]["selection"]
-  onDone: () => void
-  workspaceEligible: boolean
-  onWorkspace: () => void
-}) {
+// Argavis ships a built-in model, so there is no "connect a provider" tip; only the workspace tip remains.
+function NewSessionTips(props: { workspaceEligible: boolean; onWorkspace: () => void }) {
   const language = useLanguage()
-  const dialog = useDialog()
-  const sdk = useWorkspaceLocation()
-  const providers = useProviders(() => sdk().directory)
-
-  const [providerState, setProviderState, , providerReady] = persisted(
-    Persist.global("new-session.provider-tip"),
-    ProviderTipSchema,
-    { dismissedAt: 0 },
-  )
 
   const [workspaceState, setWorkspaceState, , workspaceReady] = persisted(
     Persist.global("new-session.workspace-tip"),
@@ -147,20 +129,10 @@ function NewSessionTips(props: {
       Date.now() - workspaceState.dismissedAt >= providerTipDismissalDuration,
   )
 
-  const providerVisible = createMemo(
-    () =>
-      providerReady() &&
-      providers.anyConnection() === false &&
-      Date.now() - providerState.dismissedAt >= providerTipDismissalDuration,
-  )
-
-  const tip = createMemo<"workspace" | "provider" | undefined>(() => {
-    if (providerVisible()) return "provider"
-
+  const tip = createMemo<"workspace" | undefined>(() => {
     if (workspaceVisible()) return "workspace"
   })
 
-  const displayed = createMemo<"workspace" | "provider" | undefined>((previous) => tip() ?? previous)
   const [ref, setRef] = createSignal<HTMLDivElement>()
 
   const presence = createPresence({
@@ -169,36 +141,14 @@ function NewSessionTips(props: {
   })
 
   const open = () => {
-    const current = tip()
-
-    if (!current) return
-
-    if (current === "workspace") {
-      setWorkspaceState("dismissedAt", Date.now())
-      props.onWorkspace()
-
-      return
-    }
-
-    void import("@/providers/connect/dialog").then(({ DialogConnectProvider }) => {
-      void dialog.show(() => (
-        <DialogConnectProvider directory={sdk().directory} selection={props.selection} onDone={props.onDone} />
-      ))
-    })
+    if (!tip()) return
+    setWorkspaceState("dismissedAt", Date.now())
+    props.onWorkspace()
   }
 
   const dismiss = () => {
-    const current = tip()
-
-    if (!current) return
-
-    if (current === "workspace") {
-      setWorkspaceState("dismissedAt", Date.now())
-
-      return
-    }
-
-    setProviderState("dismissedAt", Date.now())
+    if (!tip()) return
+    setWorkspaceState("dismissedAt", Date.now())
   }
 
   return (
@@ -216,9 +166,7 @@ function NewSessionTips(props: {
             class="flex h-6 min-w-0 items-center rounded-[4px] pl-1.5 text-[13px] leading-text-compact tracking-[-0.04px] text-v2-text-text-faint transition-[background-color,color] duration-150 ease-in-out hover:bg-v2-overlay-simple-overlay-hover hover:text-v2-text-text-muted focus-visible:bg-v2-overlay-simple-overlay-hover focus-visible:text-v2-text-text-muted focus-visible:outline-none"
             onClick={open}
           >
-            <span class="truncate">
-              {language.t(displayed() === "workspace" ? "home.workspaceTip" : "home.providerTip")}
-            </span>
+            <span class="truncate">{language.t("home.workspaceTip")}</span>
             <span class="flex size-6 shrink-0 items-center justify-center" aria-hidden="true">
               <Icon name="chevron-down" size="small" class="-rotate-90" />
             </span>

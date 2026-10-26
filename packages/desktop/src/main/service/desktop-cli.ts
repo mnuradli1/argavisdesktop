@@ -13,6 +13,9 @@ import { parseCliVersion } from "./cli-version"
 
 const execFileAsync = promisify(execFile)
 
+// An installed OpenCode owns ~/.opencode/bin/opencode, so the Argavis command gets its own name and directory.
+const installedCommand = "argavis"
+
 export interface Resolved {
   readonly version: string
   readonly command: readonly string[]
@@ -43,7 +46,7 @@ export const layer = Layer.effect(
       const home = app.getPath("home")
       yield* runInstaller(cli.binary, home)
 
-      return path.join(home, ".opencode", "bin", "opencode")
+      return path.join(home, `.${installedCommand}`, "bin", installedCommand)
     })
 
     return Service.of({ resolve, install })
@@ -190,7 +193,7 @@ const runInstaller = Effect.fn("DesktopCli.installForUser")(function* (binary: s
   yield* Effect.tryPromise({
     try: () =>
       new Promise<void>((resolve, reject) => {
-        const child = spawn("/bin/bash", ["-s", "--", "--binary", binary], {
+        const child = spawn("/bin/bash", ["-s", "--", "--binary", binary, "--name", installedCommand], {
           env: { ...process.env, HOME: home },
           stdio: ["pipe", "ignore", "pipe"],
         })

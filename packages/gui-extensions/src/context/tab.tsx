@@ -126,8 +126,9 @@ export default function SessionContextTab(props: { session: MountedSession }) {
     return {
       message,
       tokens: message.tokens,
-      providerLabel: entry?.provider.name ?? message.model.providerID,
-      modelLabel: entry?.model?.name ?? message.model.id,
+      // Argavis names only the providers and models it offers, never the raw IDs of others.
+      providerLabel: entry?.provider.name ?? "—",
+      modelLabel: entry?.model?.name ?? "—",
       limit: entry?.model?.limit.context,
       input: message.tokens.input,
       total,

@@ -63,11 +63,10 @@ const rootClientTabs = [
   { value: "shortcuts", icon: pageIcons.shortcuts, label: "settings.tab.shortcuts" },
 ] as const
 
+// Argavis ships a single built-in model, so the provider and model pages are not listed.
 const serverTabs = [
   { value: "projects", icon: pageIcons.projects, label: "settings.tab.projects" },
   { value: "workspaces", icon: pageIcons.workspaces, label: "settings.tab.workspaces" },
-  { value: "providers", icon: pageIcons.providers, label: "settings.providers.title" },
-  { value: "models", icon: pageIcons.models, label: "settings.models.title" },
   { value: "extensions", icon: pageIcons.extensions, label: "settings.tab.extensions" },
 ] as const
 

@@ -516,6 +516,10 @@ export function createSessionTimelineRowRenderer(input: {
 
       if (value?.type !== "model-switched") return undefined
       const match = data.store.provider?.all?.get(value.model.providerID)
+      // Argavis names only the models it offers; a switch to any other model is not shown.
+      const name = match?.models?.[value.model.id]?.name
+
+      if (!name) return undefined
       const variantOnly = value.previous?.providerID === value.model.providerID && value.previous.id === value.model.id
       const variant = value.model.variant ?? "default"
 
@@ -526,9 +530,7 @@ export function createSessionTimelineRowRenderer(input: {
           ? variant === "default"
             ? i18n.t("ui.sessionTimeline.notice.variantDefault")
             : i18n.t("ui.sessionTimeline.notice.variantSwitched", { variant })
-          : i18n.t("ui.sessionTimeline.notice.modelSwitched", {
-              model: match?.models?.[value.model.id]?.name ?? value.model.id,
-            }),
+          : i18n.t("ui.sessionTimeline.notice.modelSwitched", { model: name }),
       }
     })
 

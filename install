@@ -18,6 +18,7 @@ Options:
     -h, --help              Display this help message
     -v, --version <version> Install a specific version (e.g., 0.0.0-beta-17236)
     -b, --binary <path>     Install from a local binary instead of downloading
+    -n, --name <command>    Install the command under this name, in ~/.<command>/bin (default: opencode)
         --no-modify-path    Don't modify shell config files (.zshrc, .bashrc, etc.)
 
 Examples:
@@ -55,6 +56,15 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             ;;
+        -n|--name)
+            if [[ -n "${2:-}" ]]; then
+                APP="$2"
+                shift 2
+            else
+                echo -e "${RED}Error: --name requires a command name${NC}"
+                exit 1
+            fi
+            ;;
         --no-modify-path)
             no_modify_path=true
             shift
@@ -66,7 +76,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-INSTALL_DIR=$HOME/.opencode/bin
+INSTALL_DIR=$HOME/.$APP/bin
 mkdir -p "$INSTALL_DIR"
 
 # If --binary is provided, skip all download/detection logic
@@ -363,7 +373,10 @@ else
     check_version
     download_and_install
 fi
-install_legacy_shim
+# The opencode2 shim only forwards to an opencode command.
+if [[ "$APP" == "opencode" ]]; then
+    install_legacy_shim
+fi
 
 
 add_to_path() {
@@ -373,9 +386,9 @@ add_to_path() {
     if grep -Fxq "$command" "$config_file"; then
         print_message info "Command already exists in $config_file, skipping write."
     elif [[ -w $config_file ]]; then
-        echo -e "\n# opencode" >> "$config_file"
+        echo -e "\n# $APP" >> "$config_file"
         echo "$command" >> "$config_file"
-        print_message info "${MUTED}Successfully added ${NC}opencode ${MUTED}to \$PATH in ${NC}$config_file"
+        print_message info "${MUTED}Successfully added ${NC}$APP ${MUTED}to \$PATH in ${NC}$config_file"
     else
         print_message warning "Manually add the directory to $config_file (or similar):"
         print_message info "  $command"
@@ -460,7 +473,7 @@ echo -e ""
 echo -e "${MUTED}OpenCode includes free models, to start:${NC}"
 echo -e ""
 echo -e "cd <project>  ${MUTED}# Open directory${NC}"
-echo -e "opencode      ${MUTED}# Run command${NC}"
+printf "%-14s${MUTED}# Run command${NC}\n" "$APP"
 echo -e ""
 echo -e "${MUTED}For more information visit ${NC}https://opencode.ai/v2/docs"
 echo -e ""

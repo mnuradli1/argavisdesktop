@@ -1,7 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512"><svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="512" height="512" fill="#131010"></rect>
-<path d="M320 224V352H192V224H320Z" fill="#5A5858"></path>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M384 416H128V96H384V416ZM320 160H192V352H320V160Z" fill="white"></path>
-</svg><style>@media (prefers-color-scheme: light) { :root { filter: none; } }
-@media (prefers-color-scheme: dark) { :root { filter: none; } }
-</style></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><defs><linearGradient id="signal" x1="14" y1="10" x2="52" y2="57" gradientUnits="userSpaceOnUse"><stop stop-color="#A5F3FC"/><stop offset=".48" stop-color="#22D3EE"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient></defs><path d="M32 5 55 14v19c0 12-9 20-23 27C18 53 9 45 9 33V14L32 5Z" fill="#081323" stroke="url(#signal)" stroke-width="3.6" stroke-linejoin="round"/><path d="m17 43 15-27 15 27h-7l-8-15-8 15h-7Z" fill="url(#signal)"/><path d="m21 37 11-6 11 6-11 6-11-6Z" fill="#081323" stroke="#A5F3FC" stroke-width="2.6" stroke-linejoin="round"/><path d="m32 34 3 3-3 3-3-3 3-3Z" fill="#67E8F9"/></svg>

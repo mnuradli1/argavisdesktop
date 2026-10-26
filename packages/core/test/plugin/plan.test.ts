@@ -23,8 +23,8 @@ import { host } from "./host"
 const sessionID = Session.ID.make("ses_plan_test")
 const plan = Agent.ID.make("plan")
 const build = Agent.ID.make("build")
-const home = "/home/plan-test"
-const planDirectory = path.join(home, ".opencode", "plan")
+const data = "/home/plan-test/.local/share/argavis"
+const planDirectory = path.join(data, "plan")
 
 const agentSelected = (agent: Agent.ID, previous: Agent.ID): SessionEvent.AgentSelected => ({
   id: Event.ID.create(),
@@ -101,7 +101,7 @@ const run = Effect.fnUntraced(function* (events: ReadonlyArray<SessionEvent.Agen
       },
     }),
   ).pipe(
-    Effect.provideService(Global.Service, Global.Service.of({ ...Global.make(), home })),
+    Effect.provideService(Global.Service, Global.Service.of({ ...Global.make(), data })),
     Effect.provideService(
       Environment.Service,
       Environment.Service.of({ files: Environment.makeFiles(driver), spawner: driver.spawner }),

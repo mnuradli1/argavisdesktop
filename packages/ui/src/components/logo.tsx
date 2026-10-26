@@ -1,62 +1,76 @@
-import { type ComponentProps } from "solid-js"
+import { createUniqueId, type ComponentProps } from "solid-js"
+
+// ARGAVIS letterforms on a 6-unit grid. Each glyph is 24 wide, spans y 6–36, and letters advance by 30.
+// `shadow` fills the open counters below the top two rows, matching the depth cue of the original wordmark.
+export const wordmarkGlyphs = {
+  A: { ink: "M0 6H24V36H18V24H6V36H0ZM6 12V18H18V12Z", shadow: "M6 24H18V36H6Z" },
+  R: { ink: "M0 6H24V24H18V36H12V24H6V36H0ZM6 12V18H18V12Z", shadow: "M6 24H12V36H6ZM18 24H24V36H18Z" },
+  G: { ink: "M0 6H24V12H6V30H18V24H12V18H24V36H0Z", shadow: "M6 18H12V24H18V30H6Z" },
+  V: { ink: "M0 6H6V24H9V30H15V24H18V6H24V24H21V30H18V36H6V30H3V24H0Z", shadow: "M6 18H18V24H15V30H9V24H6Z" },
+  I: { ink: "M0 6H24V12H15V30H24V36H0V30H9V12H0Z", shadow: "M0 18H9V30H0ZM15 18H24V30H15Z" },
+  S: { ink: "M0 6H24V12H6V18H24V36H0V30H18V24H0Z", shadow: "M0 24H18V30H0Z" },
+}
+
+export const wordmarkLetters = ["A", "R", "G", "A", "V", "I", "S"] as const
 
 export const Mark = (props: { class?: string }) => {
-  return (
-    <svg
-      data-component="logo-mark"
-      classList={{ [props.class ?? ""]: !!props.class }}
-      viewBox="0 0 16 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path data-slot="logo-logo-mark-shadow" d="M12 16H4V8H12V16Z" fill="var(--icon-weak-base)" />
-      <path data-slot="logo-logo-mark-o" d="M12 4H4V16H12V4ZM16 20H0V0H16V20Z" fill="var(--icon-strong-base)" />
-    </svg>
-  )
+  return <Emblem component="logo-mark" class={props.class} />
 }
 
 export const Splash = (props: Pick<ComponentProps<"svg">, "ref" | "class">) => {
-  return (
-    <svg
-      ref={props.ref}
-      data-component="logo-splash"
-      classList={{ [props.class ?? ""]: !!props.class }}
-      viewBox="0 0 80 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M60 80H20V40H60V80Z" fill="var(--icon-base)" />
-      <path d="M60 20H20V80H60V20ZM80 100H0V0H80V100Z" fill="var(--icon-strong-base)" />
-    </svg>
-  )
+  return <Emblem component="logo-splash" ref={props.ref} class={props.class} />
 }
 
 export const Logo = (props: { class?: string }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 234 42"
+      viewBox="0 0 204 42"
       fill="none"
       classList={{ [props.class ?? ""]: !!props.class }}
     >
       <g>
-        <path d="M18 30H6V18H18V30Z" fill="var(--icon-weak-base)" />
-        <path d="M18 12H6V30H18V12ZM24 36H0V6H24V36Z" fill="var(--icon-base)" />
-        <path d="M48 30H36V18H48V30Z" fill="var(--icon-weak-base)" />
-        <path d="M36 30H48V12H36V30ZM54 36H36V42H30V6H54V36Z" fill="var(--icon-base)" />
-        <path d="M84 24V30H66V24H84Z" fill="var(--icon-weak-base)" />
-        <path d="M84 24H66V30H84V36H60V6H84V24ZM66 18H78V12H66V18Z" fill="var(--icon-base)" />
-        <path d="M108 36H96V18H108V36Z" fill="var(--icon-weak-base)" />
-        <path d="M108 12H96V36H90V6H108V12ZM114 36H108V12H114V36Z" fill="var(--icon-base)" />
-        <path d="M144 30H126V18H144V30Z" fill="var(--icon-weak-base)" />
-        <path d="M144 12H126V30H144V36H120V6H144V12Z" fill="var(--icon-strong-base)" />
-        <path d="M168 30H156V18H168V30Z" fill="var(--icon-weak-base)" />
-        <path d="M168 12H156V30H168V12ZM174 36H150V6H174V36Z" fill="var(--icon-strong-base)" />
-        <path d="M198 30H186V18H198V30Z" fill="var(--icon-weak-base)" />
-        <path d="M198 12H186V30H198V12ZM204 36H180V6H198V0H204V36Z" fill="var(--icon-strong-base)" />
-        <path d="M234 24V30H216V24H234Z" fill="var(--icon-weak-base)" />
-        <path d="M216 12V18H228V12H216ZM234 24H216V30H234V36H210V6H234V24Z" fill="var(--icon-strong-base)" />
+        {wordmarkLetters.map((letter, index) => (
+          <g transform={`translate(${index * 30} 0)`}>
+            <path d={wordmarkGlyphs[letter].shadow} fill="var(--icon-weak-base)" />
+            <path d={wordmarkGlyphs[letter].ink} fill="var(--icon-strong-base)" />
+          </g>
+        ))}
       </g>
+    </svg>
+  )
+}
+
+// The Argavis shield emblem, cropped to the stroked shield. Gradient ids are per instance because
+// duplicate ids on one page make every copy resolve the first definition.
+function Emblem(props: Pick<ComponentProps<"svg">, "ref" | "class"> & { component: string }) {
+  const signal = createUniqueId()
+
+  return (
+    <svg
+      ref={props.ref}
+      data-component={props.component}
+      classList={{ [props.class ?? ""]: !!props.class }}
+      viewBox="7 3 50 59"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <linearGradient id={signal} x1="14" y1="10" x2="52" y2="57" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#A5F3FC" />
+          <stop offset=".48" stop-color="#22D3EE" />
+          <stop offset="1" stop-color="#8B5CF6" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M32 5 55 14v19c0 12-9 20-23 27C18 53 9 45 9 33V14L32 5Z"
+        fill="#081323"
+        stroke={`url(#${signal})`}
+        stroke-width="2.5"
+      />
+      <path d="m17 43 15-27 15 27h-7l-8-15-8 15h-7Z" fill={`url(#${signal})`} />
+      <path d="m21 37 11-6 11 6-11 6-11-6Z" fill="#081323" stroke="#A5F3FC" stroke-width="2" />
+      <path d="m32 34 3 3-3 3-3-3 3-3Z" fill="#67E8F9" />
     </svg>
   )
 }

@@ -35,9 +35,9 @@ function fail(message: string) {
   return { _tag: "fail" as const, error: new Error(message) }
 }
 
-/** The default registration file. */
+/** The default registration file. Keep the directory in sync with `@opencode/util/global`'s app name. */
 export function fallback() {
-  return join(process.env["XDG_STATE_HOME"] ?? join(homedir(), ".local", "state"), "opencode", "service.json")
+  return join(process.env["XDG_STATE_HOME"] ?? join(homedir(), ".local", "state"), "argavis", "service.json")
 }
 
 /** Whether two registrations describe the same service instance. */
