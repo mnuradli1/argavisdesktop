@@ -102,13 +102,8 @@ function whatsNew(ctx: SetupContext<typeof definition>) {
       draft.version = version
     })
 
-  if (!previous || !ctx.stores.releaseNotes.value.enabled) return markSeen()
-
-  void import("./whats-new").then((module) => {
-    if (ctx.signal.aborted) return
-
-    module.showWhatsNew(ctx, { previous, current: version, markSeen })
-  })
+  // Argavis has no release-notes feed of its own; the upstream changelog describes OpenCode releases.
+  markSeen()
 }
 
 export default setup

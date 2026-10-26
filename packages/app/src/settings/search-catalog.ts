@@ -157,8 +157,6 @@ export const clientSettings: Entry<SettingsRootTab>[] = [
 export const serverSettings: Entry<SettingsServerTab>[] = [
   { tab: "projects", label: "settings.tab.projects" },
   { tab: "workspaces", label: "settings.tab.workspaces", keywords: "workspaces disk usage cleanup delete" },
-  { tab: "providers", label: "settings.providers.title", keywords: "connect api key credentials" },
-  { tab: "models", label: "settings.models.title", keywords: "model picker visibility" },
   { tab: "extensions", label: "settings.tab.extensions" },
   {
     tab: "extensions",

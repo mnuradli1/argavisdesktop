@@ -1,6 +1,6 @@
-# OpenCode Desktop
+# Argavis Desktop
 
-The OpenCode Desktop app, built with Electron.
+The Argavis Desktop app, built with Electron.
 
 ## Development
 
@@ -48,11 +48,11 @@ renderer going idle, so dev-server and bundling costs are not part of the number
 ```bash
 OPENCODE_CHANNEL=dev bun run build && bunx electron-builder --win --dir --config electron-builder.config.ts
 bun run bench:startup -- --runs 5                                  # warm service (started once, reused by every launch)
-bun run bench:startup -- --runs 5 --compare dist/other/OpenCode\ Dev.exe   # A/B: alternate launches of two builds
+bun run bench:startup -- --runs 5 --compare dist/other/Argavis\ Dev.exe    # A/B: alternate launches of two builds
 bun run bench:startup -- --service cold                            # each launch spawns the service
 bun run bench:startup -- --fresh                                   # first launch after an install (profile wiped each time)
 bun run bench:startup -- --profile-main --profile-renderer --trace # CPU profiles and a Chromium startup trace
-bun run bench:startup -- --seed "%APPDATA%\ai.opencode.desktop.dev"   # restore tabs and drafts from an existing profile
+bun run bench:startup -- --seed "%APPDATA%\ai.argavis.desktop.dev"   # restore tabs and drafts from an existing profile
 ```
 
 The app runs in an isolated home (`%TEMP%\opencode-bench-startup`): its own `%APPDATA%`, XDG directories, OpenCode
@@ -74,4 +74,5 @@ written to `dist/bench-startup`.
 
 A packaged beta or prod build registers itself as the `opencode://` handler when it starts, even from the bench; the
 installed app takes the registration back on its next launch. Those channels run with `HTTPS_PROXY` pointed at a
-closed port (`--offline` forces it for dev) so the updater's first check fails fast instead of reaching GitHub.
+closed port (`--offline` forces it for dev) so any network request fails fast. Argavis builds ship with the updater
+disabled.

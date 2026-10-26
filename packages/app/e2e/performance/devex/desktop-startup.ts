@@ -174,7 +174,7 @@ async function initializeColdProfile(root: string) {
     writeFile(join(root, "desktop", "opencode.settings"), JSON.stringify({ firstLaunchOnboardingComplete: true })),
     writeFile(join(root, "desktop", "opencode.global.dat"), JSON.stringify({ language: '{"locale":"en"}' })),
   ])
-  const registration = join(root, "desktop", "opencode", "service-local.json")
+  const registration = join(root, "desktop", "argavis", "service-local.json")
   await Service.stop({ file: registration })
 
   return { root, registration }

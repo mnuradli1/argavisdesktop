@@ -9,7 +9,9 @@ import { make } from "./machine"
 const setup: MainSetup<typeof definition> = async (ctx) => {
   const build = ctx.build
   const lifecycle = ctx.lifecycle
-  const enabled = build.packaged && build.channel !== "dev"
+  // Argavis ships no update feed: every build stays in the "disabled" state and never loads electron-updater,
+  // so nothing checks, downloads, or installs OpenCode releases.
+  const enabled = false
   // Holds no resources, so it needs no cleanup.
   const context = logContext(ctx.log.write)
   const runPromise = Effect.runPromiseWith(context)

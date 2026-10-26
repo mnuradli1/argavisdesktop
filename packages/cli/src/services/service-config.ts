@@ -47,14 +47,16 @@ export function defaultPort(channel = OPENCODE_CHANNEL, platform = process.platf
   const port = channelPort(channel)
   // Windows hands out 0xC000-0xFFFF for outgoing connections, and Hyper-V and WinNAT reserve blocks of that range at
   // boot, so a port there can fail as in use while nothing listens on it. Moving into the 0xB000 block keeps the low
-  // 12 bits: 0xC0DE becomes 0xB0DE, which is 0xC0DE - 4096, a nod to the v1 port.
+  // 12 bits: 0xC1DE becomes 0xB1DE, which is 0xC1DE - 4096.
   if (platform === "win32" && port >= 0xc000) return 0xb000 | (port & 0xfff)
   return port
 }
 
+// Argavis sits one block above OpenCode's 0xC0DE/0xC0DF so an installed OpenCode service never holds the port that
+// Argavis' fixed-port contenders bind, and the reverse.
 function channelPort(channel: string) {
-  if (channel === "latest" || channel === "dev" || channel === "beta" || channel === "next") return 0xc0de
-  if (channel === "local") return 0xc0df
+  if (channel === "latest" || channel === "dev" || channel === "beta" || channel === "next") return 0xc1de
+  if (channel === "local") return 0xc1df
   return 10_000 + (Number.parseInt(Hash.fast(channel).slice(0, 8), 16) % 50_000)
 }
 

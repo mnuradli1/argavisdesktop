@@ -29,14 +29,14 @@ function index(input: Partial<Parameters<typeof settingsSearchIndex>[0]> = {}) {
 
 describe("settings search index", () => {
   test("uses concrete server identity and adapts single-server destinations", () => {
-    const multi = rankSettings("models", index(), root).filter((item) => item.topLevel)
+    const multi = rankSettings("workspaces", index(), root).filter((item) => item.topLevel)
     expect(multi.map((item) => item.view)).toEqual([
-      { type: "server", server: "local", tab: "models", target: undefined, subtab: undefined },
-      { type: "server", server: "remote", tab: "models", target: undefined, subtab: undefined },
+      { type: "server", server: "local", tab: "workspaces", target: undefined, subtab: undefined },
+      { type: "server", server: "remote", tab: "workspaces", target: undefined, subtab: undefined },
     ])
-    const single = rankSettings("models", index({ servers: [servers[0]] }), root).find((item) => item.topLevel)!
+    const single = rankSettings("workspaces", index({ servers: [servers[0]] }), root).find((item) => item.topLevel)!
     expect(single.server).toBe("local")
-    expect(single.view).toEqual({ type: "root", tab: "models", target: undefined, subtab: undefined })
+    expect(single.view).toEqual({ type: "root", tab: "workspaces", target: undefined, subtab: undefined })
   })
 
   test("keeps unavailable servers discoverable without advertising unloaded settings", () => {

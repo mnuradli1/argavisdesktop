@@ -7,6 +7,7 @@ import { Global } from "@opencode/util/global"
 import { OPENCODE_ARTIFACT, OPENCODE_CHANNEL, OPENCODE_VERSION } from "./version"
 import { AppProcess } from "@opencode/util/process"
 import { randomBytes, randomUUID } from "node:crypto"
+import path from "node:path"
 import { Effect, Option, Redacted, Schema } from "effect"
 import { PersistentPty } from "@opencode/schema/persistent-pty"
 import { HttpServer } from "effect/http"
@@ -106,6 +107,9 @@ const processEffect = Effect.fnUntraced(function* (options: Options) {
           simulation: truthy(process.env.OPENCODE_SIMULATE),
           database: {
             path: databasePath(global.data),
+            // Argavis used OpenCode's data directory before it had its own, so its first database starts
+            // as a copy of OpenCode's and the earlier sessions carry over.
+            seed: process.env.OPENCODE_DB ? undefined : databasePath(path.join(path.dirname(global.data), "opencode")),
           },
           models: {
             url: process.env.OPENCODE_MODELS_URL,

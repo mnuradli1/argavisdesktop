@@ -23,6 +23,13 @@
     margin-block-end: 16px;
   }
 
+  .server-connect-emblem {
+    display: block;
+    width: 48px;
+    margin-inline: auto;
+    margin-block-end: 16px;
+  }
+
   header {
     text-align: center;
     margin-block-end: 16px;

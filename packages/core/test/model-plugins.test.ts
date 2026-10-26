@@ -5,7 +5,9 @@ import { Credential } from "@opencode/core/credential"
 import { Integration } from "@opencode/core/integration"
 import { Location } from "@opencode/core/location"
 import { Model } from "@opencode/core/model"
+import { ModelResolver } from "@opencode/core/model-resolver"
 import { Plugin } from "@opencode/core/plugin"
+import { ArgavisPlugin } from "@opencode/core/plugin/provider/argavis"
 import { Provider } from "@opencode/core/provider"
 import { State } from "@opencode/core/state"
 import { fromPromise } from "@opencode/plugin/promise/adapter"
@@ -466,4 +468,53 @@ it.effect(
       expect(yield* models.get(upstream, modelID)).toMatchObject({ limit: { context: 4096 } })
       expect(yield* models.get(custom, modelID)).toMatchObject({ limit: { context: 32_768 } })
     }),
+)
+
+it.effect("Argavis replaces every provider registered before it and becomes the default model", () =>
+  Effect.acquireUseRelease(
+    Effect.sync(() => {
+      const previous = process.env.ARGAVIS_API_KEY
+      process.env.ARGAVIS_API_KEY = "ak_test"
+      return previous
+    }),
+    () =>
+      Effect.gen(function* () {
+        const plugins = yield* Plugin.Service
+        const providers = yield* Provider.Service
+        const models = yield* Model.Service
+        const company = Provider.ID.make("company")
+        yield* plugins.activate([
+          {
+            id: "model-source",
+            revision: "1",
+            effect: (ctx) =>
+              ctx.provider
+                .transform((editor) =>
+                  editor.add({
+                    info: { ...Provider.Info.empty(company), activation: "enabled" },
+                    models: [Model.Info.default(company, Model.ID.make("chat"))],
+                  }),
+                )
+                .pipe(Effect.asVoid),
+          },
+          { ...ArgavisPlugin, revision: "1" },
+        ])
+
+        expect((yield* providers.available()).map((provider) => provider.name)).toEqual(["Argavis AI"])
+        expect((yield* models.available()).map((model) => model.name)).toEqual(["ARGAVIS AI"])
+        const model = yield* models.default()
+        expect(model).toMatchObject({
+          providerID: "argavis",
+          id: "argavis-ai",
+          settings: { baseURL: "https://api.abliteration.ai/v1", apiKey: "ak_test" },
+        })
+        if (!model) throw new Error("Expected the Argavis model")
+        expect(yield* ModelResolver.fromCatalogModel(model)).toMatchObject({ id: "abliterated-model-large-v2" })
+      }),
+    (previous) =>
+      Effect.sync(() => {
+        if (previous === undefined) delete process.env.ARGAVIS_API_KEY
+        else process.env.ARGAVIS_API_KEY = previous
+      }),
+  ),
 )

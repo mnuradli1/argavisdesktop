@@ -94,6 +94,7 @@ import { PlanPlugin } from "./plan.js"
 import { ModelsDevPlugin } from "./models-dev.js"
 import { McpCodeModeDefaultsPlugin } from "./mcp-codemode-defaults.js"
 import { ProviderPlugins } from "./provider.js"
+import { ArgavisPlugin } from "./provider/argavis.js"
 import { OpencodePlugin } from "./provider/opencode.js"
 import { WebSearchPlugins } from "./websearch/index.js"
 import { SkillPlugin } from "./skill.js"
@@ -267,11 +268,13 @@ const post = [
   ConfigProviderPlugin.Plugin,
   ConfigWebSearchPlugin.Plugin,
   ConfigPolicyPlugin.Plugin,
+  // Last, so the Argavis provider replaces every provider registered before it.
+  ArgavisPlugin,
 ] as const satisfies readonly InternalPlugin[]
 
-// Repository config must not switch off policy enforcement or the Console connection that delivers
-// organization statements, so plugin remove operations skip these IDs.
-export const guarded: ReadonlySet<string> = new Set([OpencodePlugin.id, ConfigPolicyPlugin.Plugin.id])
+// Repository config must not switch off policy enforcement, the Console connection that delivers
+// organization statements, or the Argavis provider, so plugin remove operations skip these IDs.
+export const guarded: ReadonlySet<string> = new Set([OpencodePlugin.id, ConfigPolicyPlugin.Plugin.id, ArgavisPlugin.id])
 
 export const list = Effect.fn("PluginInternal.list")(function* () {
   // Capture only services; activation supplies the child Scope and batching context.

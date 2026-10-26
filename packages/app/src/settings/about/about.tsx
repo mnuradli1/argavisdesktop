@@ -96,15 +96,8 @@ export function SettingsAbout(props: { active: boolean }) {
         <p>{language.t("settings.about.firstIllustrated")}</p>
       </div>
 
-      <p class="settings-about-faint">
-        <ExternalLink href="https://opencode.ai">
-          <bdi dir="ltr">{language.t("settings.about.website")}</bdi>
-        </ExternalLink>
-      </p>
-
       <div class="settings-about-details">
         <p>{language.t("settings.about.description")}</p>
-        <p>{language.t("settings.about.trademark")}</p>
         <p>{language.t("settings.about.typeset")}</p>
         <p>
           <button type="button" class="settings-about-link" onClick={() => void showNotices()}>

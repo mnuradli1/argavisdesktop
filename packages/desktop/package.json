@@ -4,9 +4,9 @@
   "version": "2.0.29",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://opencode.ai",
+  "homepage": "https://github.com/mnuradli1/argavisdesktop",
   "author": {
-    "name": "OpenCode",
+    "name": "Argavis",
     "email": "hello@opencode.ai"
   },
   "scripts": {
