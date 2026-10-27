@@ -333,7 +333,7 @@ test("a catalog refresh cannot replace an existing session's model", async ({ pa
   await control.click()
   await page
     .getByRole("dialog", { name: "Select model" })
-    .getByRole("button", { name: "Beta Free", exact: true })
+    .getByRole("option", { name: "Beta Free", exact: true })
     .click()
   await expect(control).toHaveText("OpenCode / Beta")
   await view.editor.fill("Use the replacement I chose")
@@ -826,7 +826,6 @@ test("lists slash commands in their built-in order", async ({ page }) => {
     "/terminal",
     "/mcp",
     "/model",
-    "/connect",
     "/btw",
   ])
 })

@@ -264,18 +264,11 @@ test("a search result reveal highlights once and cleans up after it finishes", a
   await expect(view.settings).toHaveAttribute("data-search-flashes", "1")
 })
 
-test("Models and Shortcuts leave focus on navigation until the user types", async ({ page }) => {
+test("Shortcuts leaves focus on navigation until the user types", async ({ page }) => {
   const view = await open(page)
-
-  for (const entry of [
-    { tab: "Models", search: "Search models" },
-    { tab: "Shortcuts", search: "Search shortcuts" },
-  ]) {
-    await view.settings.getByRole("tab", { name: entry.tab, exact: true }).click()
-    await expect(view.settings.getByRole("searchbox", { name: entry.search, exact: true })).not.toBeFocused()
-  }
-
+  await view.settings.getByRole("tab", { name: "Shortcuts", exact: true }).click()
   const search = view.settings.getByRole("searchbox", { name: "Search shortcuts", exact: true })
+  await expect(search).not.toBeFocused()
   await page.keyboard.press("e")
   await expect(search).toBeFocused()
   await page.keyboard.type("verything")
@@ -420,7 +413,7 @@ test("multi-server results follow the selected server and keep the query on retu
   await view.search.fill("MCPs")
   await expect(view.results.getByRole("option")).toHaveCount(1)
   await view.search.clear()
-  await view.settings.getByRole("tab", { name: "Providers", exact: true }).click()
+  await view.settings.getByRole("tab", { name: "Projects", exact: true }).click()
   await view.settings.getByRole("button", { name: "Server This computer", exact: true }).click()
   await page.getByRole("menuitemradio", { name: "Build server", exact: true }).click()
 
