@@ -1,6 +1,8 @@
 import { useCommand, type CommandOption } from "@/shell/commands/command"
 import { useLanguage } from "@/runtime/i18n/language"
 import { DialogSelectModel } from "@/providers/models/select-dialog"
+import { DialogSelectModelNext } from "@/providers/models/select-dialog-next"
+import { useSettings } from "@/settings/model"
 import { useLocal, type ModelSelection } from "@/providers/models/selection"
 import { useDialog } from "@opencode/ui/context/dialog"
 import { useSessionLayout } from "@/session/session-layout"
@@ -18,6 +20,7 @@ export const useComposerCommands = (input: { model?: ModelSelection } = {}) => {
   const dialog = useDialog()
   const language = useLanguage()
   const local = useLocal()
+  const settings = useSettings()
   const { sessionKey } = useSessionLayout()
   const sessionOwnership = createSessionOwnership(sessionKey)
   const model = input.model ?? local.model
@@ -25,12 +28,14 @@ export const useComposerCommands = (input: { model?: ModelSelection } = {}) => {
   const agentCommand = withCategory(language.t("command.category.agent"))
 
   const chooseModel = () => {
+    const Picker = settings.general.newModelPicker() ? DialogSelectModelNext : DialogSelectModel
     sessionOwnership.capture().run(() => {
-      void dialog.show(() => <DialogSelectModel model={model} />)
+      void dialog.show(() => <Picker model={model} />)
     })
   }
 
-  // Argavis only offers its built-in models, so there is no provider connection command.
+  // Argavis only offers its built-in models, so there is no provider connection command, and no usage view for
+  // OpenCode Go and Console budgets.
   command.register("composer", () => [
     modelCommand({
       id: "model.choose",

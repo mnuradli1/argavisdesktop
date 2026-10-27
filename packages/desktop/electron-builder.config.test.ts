@@ -7,7 +7,7 @@ import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import type { Configuration } from "electron-builder"
 import { getConfig } from "./electron-builder.config"
-import { CLI_BINARIES, nodePtyPackage } from "./scripts/utils"
+import { CLI_BINARIES, nodePtyPackage } from "./script/utils"
 
 // Use electron-builder's matcher so the tests also cover its glob and directory traversal semantics.
 const { FileMatcher } = createRequire(import.meta.resolve("electron-builder"))("app-builder-lib/out/fileMatcher")
@@ -20,21 +20,21 @@ const channels = [
 
 function load(channel: string, target?: string): Configuration {
   const previous = process.env.OPENCODE_CHANNEL
-  const previousTarget = process.env.OPENCODE_CLI_TARGET
+  const previousTarget = process.env.OPENCODE_TARGET
   process.env.OPENCODE_CHANNEL = channel
 
-  if (target !== undefined) process.env.OPENCODE_CLI_TARGET = target
-  else delete process.env.OPENCODE_CLI_TARGET
+  if (target !== undefined) process.env.OPENCODE_TARGET = target
+  else delete process.env.OPENCODE_TARGET
 
   try {
     return getConfig()
   } finally {
     delete process.env.OPENCODE_CHANNEL
-    delete process.env.OPENCODE_CLI_TARGET
+    delete process.env.OPENCODE_TARGET
 
     if (previous !== undefined) process.env.OPENCODE_CHANNEL = previous
 
-    if (previousTarget !== undefined) process.env.OPENCODE_CLI_TARGET = previousTarget
+    if (previousTarget !== undefined) process.env.OPENCODE_TARGET = previousTarget
   }
 }
 
@@ -52,7 +52,14 @@ test.each(channels)("channel identity for $channel", ({ channel, appId, productN
   expect(config.appId).toBe(appId)
   expect(config.productName).toBe(productName)
   expect(config.extraMetadata?.desktopName).toBe(`${appId}.desktop`)
-  expect(config.linux?.executableName).toBe(appId)
+  // The executable must never end in `.desktop`: libappimage resolves the
+  // AppImage's desktop entry by globbing `*.desktop`, and an ELF matching
+  // that glob breaks integration (anomalyco/opencode#51867).
+  expect(config.linux?.executableName).toBe(appId.replace(/\.desktop$/, ""))
+  expect(config.linux?.executableName).not.toMatch(/\.desktop$/)
+  // The installed `.desktop` filename still derives from `desktopName` so
+  // window association (StartupWMClass/desktop file basename) is unchanged.
+  expect(config.linux?.syncDesktopName).toBe(true)
   expect(config.linux?.desktop?.entry?.StartupWMClass).toBe(appId)
   // No channel may embed an update feed: packaged builds must never fetch or install OpenCode releases.
   expect(config.publish).toBeNull()
@@ -60,13 +67,24 @@ test.each(channels)("channel identity for $channel", ({ channel, appId, productN
   expect(config.protocols).toMatchObject({ schemes: ["argavis"] })
 
   for (const fpm of [config.deb?.fpm, config.rpm?.fpm]) {
-    expect(fpm).toEqual([expect.stringContaining(`/usr/share/metainfo/${appId}.metainfo.xml`)])
+    // The only file mapping is the channel's metainfo; Argavis ships no legacy OpenCode launcher.
+    expect(fpm?.filter((entry) => entry.includes("=/"))).toEqual([
+      expect.stringContaining(`/usr/share/metainfo/${appId}.metainfo.xml`),
+    ])
   }
+
+  // Shared Electron binaries must not ship /usr/lib/.build-id links that collide with other Electron RPMs.
+  // fpm rejects flags after the first src=dest mapping, so the flag must come first.
+  expect(config.rpm?.fpm?.[0]).toBe("--rpm-rpmbuild-define=_build_id_links none")
+  expect(config.deb?.fpm).not.toContain("--rpm-rpmbuild-define=_build_id_links none")
 })
 
 test("shared packaging defaults", async () => {
   const config = load("dev")
-  expect(config.mac?.sign).toBeFunction()
+  // Packaging runs in secretless build jobs; the release workflow signs and notarizes afterwards.
+  expect(config.mac?.sign).toBeUndefined()
+  expect(config.mac?.notarize).toBeUndefined()
+  expect(config.win?.signtoolOptions).toBeUndefined()
   expect(config.dmg?.sign).not.toBe(true)
   expect(config.mac?.extendInfo?.NSAutoFillRequiresTextContentTypeForOneTimeCodeOnMac).toBe(true)
   const include = path.join(import.meta.dirname, "resources/windows/installer.nsh")

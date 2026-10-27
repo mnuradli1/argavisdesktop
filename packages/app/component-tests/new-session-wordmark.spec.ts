@@ -1,10 +1,10 @@
-import { expect, story } from "../../storybook/playwright/story"
+import { expect, story } from "../../stories/playwright/story"
 
 for (const theme of ["light", "dark"]) {
   for (const direction of ["ltr", "rtl"]) {
     story(`shimmers once over the visible wordmark (${theme}, ${direction})`, async ({ mount, page }, testInfo) => {
       await page.emulateMedia({ reducedMotion: "no-preference" })
-      const component = await mount("app-new-session-wordmark--reveal", { globals: { theme, direction } })
+      const component = await mount("app-new-session-wordmark--flat", { globals: { theme, direction } })
       const logo = component.locator('[data-component="new-session-wordmark"]')
       const reveal = logo.locator('[data-slot="wordmark-reveal"]')
       const shimmer = logo.locator(".wordmark-shimmer")
@@ -85,7 +85,7 @@ for (const theme of ["light", "dark"]) {
   story(`shows a static wordmark with reduced motion (${theme})`, async ({ mount, page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.setViewportSize({ width: 360, height: 640 })
-    const component = await mount("app-new-session-wordmark--reveal", { globals: { theme } })
+    const component = await mount("app-new-session-wordmark--flat", { globals: { theme } })
     const logo = component.locator('[data-component="new-session-wordmark"]')
     await expect(logo.locator("svg").first()).toHaveCSS("opacity", "0.16")
     await expect(logo.locator('[data-slot="wordmark-reveal"]')).toHaveCSS("opacity", "1")
