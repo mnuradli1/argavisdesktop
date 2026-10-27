@@ -122,6 +122,9 @@ const createModelsController = (directory: Accessor<string | undefined>) => {
 
     if (state === "show") return true
 
+    // Argavis curates its built-in models, so they stay visible however old their release dates get.
+    if (model.providerID === "argavis") return true
+
     if (latestSet().has(key)) return true
 
     // Models without a parseable release date stay visible.

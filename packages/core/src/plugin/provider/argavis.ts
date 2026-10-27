@@ -16,6 +16,7 @@ const models = [
     id: defaultModelID,
     upstream: "abliterated-model-large-v2",
     name: "ARGAVIS AI",
+    family: "argavis-ai",
     input: ["text"],
     released: Date.UTC(2026, 7, 29),
     cost: { input: 3, output: 5, cacheRead: 0.3 },
@@ -25,6 +26,7 @@ const models = [
     id: Model.ID.make("argavis-ai-flash"),
     upstream: "abliterated-model-large-flash",
     name: "ARGAVIS AI Flash",
+    family: "argavis-ai-flash",
     input: ["text", "image"],
     released: Date.UTC(2026, 9, 20),
     cost: { input: 1, output: 2, cacheRead: 0.1 },
@@ -66,6 +68,8 @@ function argavisModel(input: {
   id: Model.ID
   upstream: string
   name: string
+  // Distinct families keep both models visible: the picker shows only the newest model of each family by default.
+  family: string
   input: Model.Info["capabilities"]["input"]
   released: number
   cost: { input: number; output: number; cacheRead: number }
@@ -76,6 +80,7 @@ function argavisModel(input: {
     modelID: Model.ID.make(input.upstream),
     providerID,
     name: input.name,
+    family: Model.Family.make(input.family),
     capabilities: { tools: true, input: input.input, output: ["text"] },
     variants: [],
     time: { released: input.released },
