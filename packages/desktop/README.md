@@ -72,7 +72,7 @@ log line. Renderer idle is the start of the first 500 ms window with under 10 % 
 for `--settle-ms`; `rendererTaskMs` is the renderer's total main-thread task time until then. Raw samples are
 written to `dist/bench-startup`.
 
-A packaged beta or prod build registers itself as the `opencode://` handler when it starts, even from the bench; the
+A packaged beta or prod build registers itself as the `argavis://` handler when it starts, even from the bench; the
 installed app takes the registration back on its next launch. Those channels run with `HTTPS_PROXY` pointed at a
 closed port (`--offline` forces it for dev) so any network request fails fast. Argavis builds ship with the updater
 disabled.

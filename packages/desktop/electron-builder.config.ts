@@ -174,7 +174,7 @@ const getBase = (appId: string): Configuration => {
     },
     protocols: {
       name: "Argavis",
-      schemes: ["opencode"],
+      schemes: ["argavis"],
     },
     win: {
       icon: `resources/icons/icon.ico`,
@@ -228,7 +228,7 @@ export function getConfig() {
         ...base,
         appId,
         productName: "Argavis Beta",
-        protocols: { name: "Argavis Beta", schemes: ["opencode"] },
+        protocols: { name: "Argavis Beta", schemes: ["argavis"] },
         deb: { fpm: [metainfoFpm(appId)] },
         rpm: { packageName: "argavis-beta", fpm: [metainfoFpm(appId)] },
       }
@@ -239,7 +239,7 @@ export function getConfig() {
         ...base,
         appId,
         productName: "Argavis",
-        protocols: { name: "Argavis", schemes: ["opencode"] },
+        protocols: { name: "Argavis", schemes: ["argavis"] },
         deb: { fpm: [metainfoFpm(appId)] },
         rpm: { packageName: "argavis", fpm: [metainfoFpm(appId)] },
       }

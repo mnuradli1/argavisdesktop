@@ -277,7 +277,6 @@ function AuthenticationHome() {
         onClearNotifications={() => {}}
         onCloseProject={() => {}}
         onOpenSettings={() => {}}
-        onOpenHelp={() => {}}
       />
     </div>
   )
