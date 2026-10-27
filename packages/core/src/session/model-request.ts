@@ -209,6 +209,33 @@ export const boundImages = (messages: LLMRequest["messages"]) => {
   })
 }
 
+// Argavis' upstream API rejects any request carrying more than ARGAVIS_IMAGE_LIMIT images, so once a session has
+// accumulated more than that across its history every later turn fails. Keep only the most recent images and replace
+// the older ones with the removal note, so the limit is enforced on the client instead of surfacing as a raw error.
+const ARGAVIS_IMAGE_LIMIT = 4
+
+export const boundImageCount = (messages: LLMRequest["messages"], limit: number) => {
+  const isImage = (mime: string) => mime.toLowerCase().startsWith("image/")
+  const total = messages.reduce(
+    (count, message) =>
+      count +
+      message.content.reduce((inner, part) => {
+        if (part.type === "media") return inner + (isImage(part.media.mediaType) ? 1 : 0)
+        if (part.type !== "tool-result" || part.result.type !== "content") return inner
+        return inner + part.result.value.filter((item: Content) => item.type === "file" && isImage(item.mime)).length
+      }, 0),
+    0,
+  )
+  const cut = total - limit
+  if (cut <= 0) return messages
+
+  let index = 0
+  return replaceMedia(messages, (media) => {
+    if (!isImage(media.mime)) return
+    return index++ < cut ? IMAGE_REMOVED : undefined
+  })
+}
+
 type Definitions = PluginHooks.Domains["session"]["context"]["tools"]
 
 /** Builds the model request for each session flow. Each entry runs its own plugin hook. */
@@ -293,7 +320,10 @@ export const layer = Layer.effect(
         promptCacheKey: /^ses_[0-9a-f]{64}$/.test(affinity) ? affinity.slice(4) : affinity,
         cache: model.cache?.ttl === undefined ? undefined : { ttl: model.cache.ttl },
         system: shaped.system,
-        messages: boundImages(unsupportedParts(shaped.messages, model.capabilities, model.model.provider)),
+        messages: (() => {
+          const bounded = boundImages(unsupportedParts(shaped.messages, model.capabilities, model.model.provider))
+          return model.model.provider === "argavis" ? boundImageCount(bounded, ARGAVIS_IMAGE_LIMIT) : bounded
+        })(),
         tools: Array.from(hooked, ([name, t]) => ({ ...t, name })),
         toolChoice: input.toolChoice,
         generation: Object.keys(generation).length === 0 ? undefined : generation,
