@@ -2,6 +2,7 @@ import { Badge } from "@opencode/ui/badge"
 import { Icon } from "@opencode/ui/icon"
 import { IconButton } from "@opencode/ui/icon-button"
 import { iconNames, type IconName } from "@opencode/ui/icons/provider"
+import { Mark } from "@opencode/ui/logo"
 import { Menu } from "@opencode/ui/menu"
 import { ProviderIcon } from "@opencode/ui/provider-icon"
 import type { JSX } from "solid-js"
@@ -34,6 +35,9 @@ export function ProviderModelIcon(props: { provider: ModelProvider; class?: stri
 
   return (
     <Switch>
+      <Match when={props.provider.id === "argavis"}>
+        <Mark class={`size-4 ${props.class ?? ""}`} />
+      </Match>
       <Match when={props.provider.id === "opencode"}>
         <OpenCodeLogo class={`size-4 ${props.class ?? ""}`} />
       </Match>

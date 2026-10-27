@@ -1,6 +1,10 @@
 import { useCommand, type CommandOption } from "@/shell/commands/command"
 import { useLanguage } from "@/runtime/i18n/language"
+import { DialogSelectModel } from "@/providers/models/select-dialog"
 import { useLocal, type ModelSelection } from "@/providers/models/selection"
+import { useDialog } from "@opencode/ui/context/dialog"
+import { useSessionLayout } from "@/session/session-layout"
+import { createSessionOwnership } from "@/session/session-ownership"
 
 const withCategory = (category: string) => {
   return (option: Omit<CommandOption, "category">): CommandOption => ({
@@ -11,14 +15,31 @@ const withCategory = (category: string) => {
 
 export const useComposerCommands = (input: { model?: ModelSelection } = {}) => {
   const command = useCommand()
+  const dialog = useDialog()
   const language = useLanguage()
   const local = useLocal()
+  const { sessionKey } = useSessionLayout()
+  const sessionOwnership = createSessionOwnership(sessionKey)
   const model = input.model ?? local.model
   const modelCommand = withCategory(language.t("command.category.model"))
   const agentCommand = withCategory(language.t("command.category.agent"))
 
-  // Argavis ships a single built-in model, so there is no model picker or provider connection command.
+  const chooseModel = () => {
+    sessionOwnership.capture().run(() => {
+      void dialog.show(() => <DialogSelectModel model={model} />)
+    })
+  }
+
+  // Argavis only offers its built-in models, so there is no provider connection command.
   command.register("composer", () => [
+    modelCommand({
+      id: "model.choose",
+      title: language.t("command.model.choose"),
+      description: language.t("command.model.choose.description"),
+      keybind: "mod+'",
+      slash: "model",
+      onSelect: chooseModel,
+    }),
     modelCommand({
       id: "model.variant.cycle",
       title: language.t("command.model.variant.cycle"),

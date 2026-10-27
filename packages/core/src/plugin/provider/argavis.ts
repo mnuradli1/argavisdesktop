@@ -6,35 +6,31 @@ import { Provider } from "../../provider.js"
 import { Variant } from "../../variant.js"
 
 const providerID = Provider.ID.make("argavis")
-const modelID = Model.ID.make("argavis-ai")
+const defaultModelID = Model.ID.make("argavis-ai")
 
 const providerPackage = "@opencode/ai/providers/openai-compatible"
 
-const base = {
-  id: modelID,
-  // Upstream abliteration.ai model; the catalog id above is the only one clients see.
-  modelID: Model.ID.make("abliterated-model-large-v2"),
-  providerID,
-  name: "ARGAVIS AI",
-  capabilities: { tools: true, input: ["text"], output: ["text"] },
-  variants: [],
-  time: { released: Date.UTC(2026, 7, 29) },
-  cost: [
-    {
-      input: Money.USDPerMillionTokens.make(3),
-      output: Money.USDPerMillionTokens.make(5),
-      cache: { read: Money.USDPerMillionTokens.make(0.3), write: Money.USDPerMillionTokens.zero },
-    },
-  ],
-  status: "active",
-  enabled: true,
-  limit: { context: 1_000_000, input: 1_000_000, output: 65_536 },
-} satisfies Model.Info
-
-const model = {
-  ...base,
-  variants: Variant.resolve({ ...base, package: providerPackage }, [{ type: "effort", values: ["low", "high", "max"] }]),
-}
+// Upstream abliteration.ai models; the catalog ids are the only ones clients see.
+const models = [
+  argavisModel({
+    id: defaultModelID,
+    upstream: "abliterated-model-large-v2",
+    name: "ARGAVIS AI",
+    input: ["text"],
+    released: Date.UTC(2026, 7, 29),
+    cost: { input: 3, output: 5, cacheRead: 0.3 },
+    context: 1_000_000,
+  }),
+  argavisModel({
+    id: Model.ID.make("argavis-ai-flash"),
+    upstream: "abliterated-model-large-flash",
+    name: "ARGAVIS AI Flash",
+    input: ["text", "image"],
+    released: Date.UTC(2026, 9, 20),
+    cost: { input: 1, output: 2, cacheRead: 0.1 },
+    context: 1_048_576,
+  }),
+]
 
 /**
  * Argavis builds expose exactly one provider and model. The plugin runs last, so it replaces whatever the
@@ -57,11 +53,45 @@ export const ArgavisPlugin = define({
           compatibility: { supportsPromptCacheKey: true },
           settings: { baseURL: "https://api.abliteration.ai/v1", apiKey: key, provider: providerID },
         },
-        models: [model],
+        models,
       })
     })
-    yield* ctx.model.transform((models) => {
-      models.default.set(providerID, modelID)
+    yield* ctx.model.transform((catalog) => {
+      catalog.default.set(providerID, defaultModelID)
     })
   }),
 })
+
+function argavisModel(input: {
+  id: Model.ID
+  upstream: string
+  name: string
+  input: Model.Info["capabilities"]["input"]
+  released: number
+  cost: { input: number; output: number; cacheRead: number }
+  context: number
+}) {
+  const base = {
+    id: input.id,
+    modelID: Model.ID.make(input.upstream),
+    providerID,
+    name: input.name,
+    capabilities: { tools: true, input: input.input, output: ["text"] },
+    variants: [],
+    time: { released: input.released },
+    cost: [
+      {
+        input: Money.USDPerMillionTokens.make(input.cost.input),
+        output: Money.USDPerMillionTokens.make(input.cost.output),
+        cache: { read: Money.USDPerMillionTokens.make(input.cost.cacheRead), write: Money.USDPerMillionTokens.zero },
+      },
+    ],
+    status: "active",
+    enabled: true,
+    limit: { context: input.context, input: input.context, output: 65_536 },
+  } satisfies Model.Info
+  return {
+    ...base,
+    variants: Variant.resolve({ ...base, package: providerPackage }, [{ type: "effort", values: ["low", "high", "max"] }]),
+  }
+}
