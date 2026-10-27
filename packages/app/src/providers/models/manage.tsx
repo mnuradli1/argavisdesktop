@@ -1,4 +1,3 @@
-import { Button } from "@opencode/ui/button"
 import { Dialog, DialogBody, DialogHeader, DialogTitleGroup } from "@opencode/ui/dialog"
 import { Switch } from "@opencode/ui/switch"
 import { TextInput } from "@opencode/ui/text-input"
@@ -8,9 +7,6 @@ import { createStore } from "solid-js/store"
 import { useLocal } from "@/providers/models/selection"
 import { popularProviders } from "@/providers/catalog/providers"
 import { useLanguage } from "@/runtime/i18n/language"
-import { useDialog } from "@opencode/ui/context/dialog"
-import { DialogConnectProvider } from "@/providers/connect/dialog"
-import { decode64 } from "@/runtime/persistence/base64"
 import { SettingsList } from "@/settings/list"
 import { SettingsRow } from "@/settings/row"
 import { consoleModelGroup, ProviderModelSections } from "@/providers/models/provider-group"
@@ -21,13 +17,7 @@ type ModelItem = ReturnType<ReturnType<typeof useLocal>["model"]["list"]>[number
 export const DialogManageModels: Component = () => {
   const local = useLocal()
   const language = useLanguage()
-  const dialog = useDialog()
   const [store, setStore] = createStore<{ collapsed: Record<string, boolean> }>({ collapsed: {} })
-  const directory = () => decode64(local.slug())
-
-  const handleConnectProvider = () => {
-    void dialog.show(() => <DialogConnectProvider directory={directory()} />)
-  }
 
   const providerList = (providerID: string) => local.model.list().filter((x) => x.provider.id === providerID)
 
@@ -99,9 +89,6 @@ export const DialogManageModels: Component = () => {
           title={language.t("dialog.model.manage")}
           description={language.t("dialog.model.manage.description")}
         />
-        <Button variant="neutral" icon="plus" onClick={handleConnectProvider}>
-          {language.t("command.provider.connect")}
-        </Button>
       </DialogHeader>
       <DialogBody class="flex min-h-0 flex-1 flex-col">
         <div class="px-4 pt-px pb-3">

@@ -501,7 +501,7 @@ it.effect("Argavis replaces every provider registered before it and becomes the 
         ])
 
         expect((yield* providers.available()).map((provider) => provider.name)).toEqual(["Argavis AI"])
-        expect((yield* models.available()).map((model) => model.name)).toEqual(["ARGAVIS AI"])
+        expect((yield* models.available()).map((model) => model.name).toSorted()).toEqual(["ARGAVIS AI", "ARGAVIS AI Flash"])
         const model = yield* models.default()
         expect(model).toMatchObject({
           providerID: "argavis",
