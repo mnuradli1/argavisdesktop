@@ -120,7 +120,7 @@ test("settings opened from a remote session sweep every server and keep the remo
   await expect(page).toHaveURL("/settings")
   await expect(page.locator('[data-titlebar-tab][data-active="true"]')).toHaveCount(0)
   await expect(page.getByRole("dialog")).toHaveCount(0)
-  await expect(settings.getByRole("tab", { name: "Models", exact: true })).toHaveCount(0)
+  await expect(settings.getByRole("tab", { name: "Projects", exact: true })).toHaveCount(0)
   await view.listed(REMOTE_SERVER, directoryB)
   await expect.poll(() => view.replies).toEqual([reply(sessionA.id, "permission-pending-a")])
 
@@ -129,13 +129,10 @@ test("settings opened from a remote session sweep every server and keep the remo
     "127.0.0.1:4097",
     "Projects",
     "Worktrees",
-    "Providers",
-    "Models",
     "Extensions",
   ])
-  await settings.getByRole("tab", { name: "Models" }).click()
-  await expect(settings.getByRole("switch", { name: "Server B Model" })).toBeEnabled()
-  await expect(settings.getByRole("switch", { name: "Server A Model" })).toHaveCount(0)
+  await settings.getByRole("tab", { name: "Projects", exact: true }).click()
+  await expect(settings.getByRole("button", { name: "server-b", exact: true })).toBeVisible()
   await settings.getByRole("button", { name: "Back to settings" }).click()
   await settings.getByRole("button", { name: "Back to app" }).click()
   await expect(settings).toBeHidden()

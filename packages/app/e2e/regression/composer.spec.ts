@@ -21,7 +21,14 @@ test("a catalog refresh cannot replace an existing session's model", async ({ pa
     sessions: [{ id: sessionID, agent: "build", model: { id: "alpha", providerID: "opencode", variant: "high" } }],
     provider: () => catalog.current,
     onPrompt: (input) => void prompts.push(input.body),
-    seed: { storage: { "opencode.global.dat:model": { recent: [{ providerID: "opencode", modelID: "beta" }] } } },
+    seed: {
+      storage: {
+        "opencode.global.dat:model": {
+          user: [{ providerID: "opencode", modelID: "beta", visibility: "show" }],
+          recent: [{ providerID: "opencode", modelID: "beta" }],
+        },
+      },
+    },
   })
 
   const control = page.locator('[data-action="composer-model"]')
@@ -74,8 +81,8 @@ test("a catalog refresh cannot replace an existing session's model", async ({ pa
   await expect(control).toHaveText("Select model")
   await control.click()
   await page
-    .getByRole("dialog", { name: "Select model" })
-    .getByRole("button", { name: "Beta Free", exact: true })
+    .getByRole("menu", { name: "Select model", exact: true })
+    .getByRole("menuitemradio", { name: "Beta Free", exact: true })
     .click()
   await expect(control).toHaveText("Beta")
   await view.editor.fill("Use the replacement I chose")
@@ -364,7 +371,6 @@ test("lists slash commands in their built-in order", async ({ page }) => {
     "/terminal",
     "/mcp",
     "/model",
-    "/connect",
     "/btw",
   ])
 })

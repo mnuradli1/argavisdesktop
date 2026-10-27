@@ -349,11 +349,7 @@ test.describe("touch", () => {
     await trigger.click()
     await expect(trigger).toHaveAttribute("aria-expanded", "true")
     await expect(drawer.locator('[data-slot="tab-project"]')).toHaveCount(0)
-    const settings = drawer.getByRole("button", { name: "Settings", exact: true })
-    const help = drawer.getByRole("button", { name: "Help", exact: true })
-    await expect(settings).toBeVisible()
-    await expect(help).toBeVisible()
-    expect((await settings.boundingBox())?.width).toBeGreaterThan((await help.boundingBox())?.width ?? 0)
+    await expect(drawer.getByRole("button", { name: "Settings", exact: true })).toBeVisible()
 
     await drawer.locator('[data-slot="tab-link"]').filter({ hasText: fixture.expected.sourceTitle }).click()
     await expect(page).toHaveURL(new RegExp(`/session/${fixture.sourceID}$`))
@@ -384,13 +380,12 @@ test.describe("touch", () => {
     await expect(page.getByRole("menuitemradio", { name: "Preferences", exact: true })).toBeHidden()
     await expect(settings).toBeVisible()
     await menu.click()
-    await page.getByRole("menuitemradio", { name: "Models", exact: true }).click()
-    await expect(settings.getByRole("heading", { name: "Models", exact: true })).toBeVisible()
-    await expect(settings.getByRole("button", { name: "Models", exact: true })).toBeVisible()
-    await expect(settings.getByRole("switch", { name: "Claude Opus 4.6", exact: true })).toBeAttached()
+    await page.getByRole("menuitemradio", { name: "Projects", exact: true }).click()
+    await expect(settings.getByRole("heading", { name: "Projects", exact: true })).toBeVisible()
+    await expect(settings.getByRole("button", { name: "Projects", exact: true })).toBeVisible()
     await expect
       .poll(async () => {
-        const navigation = await settings.getByRole("button", { name: "Models", exact: true }).boundingBox()
+        const navigation = await settings.getByRole("button", { name: "Projects", exact: true }).boundingBox()
         const content = await panel.boundingBox()
 
         return !!navigation && !!content && navigation.y + navigation.height <= content.y

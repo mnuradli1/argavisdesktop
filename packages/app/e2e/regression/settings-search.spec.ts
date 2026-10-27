@@ -201,18 +201,11 @@ test("a search result reveal highlights once and cleans up after it finishes", a
   await expect(view.settings).toHaveAttribute("data-search-flashes", "1")
 })
 
-test("Models and Shortcuts leave focus on navigation until the user types", async ({ page }) => {
+test("Shortcuts leaves focus on navigation until the user types", async ({ page }) => {
   const view = await open(page)
-
-  for (const entry of [
-    { tab: "Models", search: "Search models" },
-    { tab: "Shortcuts", search: "Search shortcuts" },
-  ]) {
-    await view.settings.getByRole("tab", { name: entry.tab, exact: true }).click()
-    await expect(view.settings.getByRole("searchbox", { name: entry.search, exact: true })).not.toBeFocused()
-  }
-
+  await view.settings.getByRole("tab", { name: "Shortcuts", exact: true }).click()
   const search = view.settings.getByRole("searchbox", { name: "Search shortcuts", exact: true })
+  await expect(search).not.toBeFocused()
   await page.keyboard.press("p")
   await expect(search).toBeFocused()
   await page.keyboard.type("alette")
