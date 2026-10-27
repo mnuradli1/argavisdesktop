@@ -304,7 +304,10 @@ test("the title and message stay stable through worktree creation", async ({ pag
   const mock = await openWorktreeDraft(page, pendingDraft)
   const pending = await submitPending(page, mock)
   await draftFollowUp(page)
-  await editor(page).press("ControlOrMeta+Home")
+  // Move the caret to the start of the two-line draft. Meta+Home is not an editing command in macOS Chromium, so
+  // "ControlOrMeta+Home" leaves the caret at the end there; ArrowUp then Home reaches the start on every platform.
+  await editor(page).press("ArrowUp")
+  await editor(page).press("Home")
   const title = page.locator("[data-session-title]").getByRole("heading", { level: 1 })
   const before = await title.boundingBox()
   const messageBefore = await pending.message.boundingBox()
