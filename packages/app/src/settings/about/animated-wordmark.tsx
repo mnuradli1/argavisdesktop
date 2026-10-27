@@ -1,6 +1,7 @@
 import { createEffect, For, on, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
 import { wordmarkGlyphs, wordmarkLetters } from "@opencode/ui/logo"
+import { prefersReducedMotion } from "@opencode/ui/motion"
 
 const choices = ["A", "R", "G", "V", "I", "S"] as const
 
@@ -15,7 +16,7 @@ export function AnimatedWordmark(props: { active: boolean }) {
         timers.forEach(clearTimeout)
         timers.clear()
 
-        if (!active || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        if (!active || prefersReducedMotion()) {
           setState("letters", [...wordmarkLetters])
 
           return

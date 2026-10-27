@@ -502,6 +502,8 @@ it.effect("Argavis replaces every provider registered before it and becomes the 
 
         expect((yield* providers.available()).map((provider) => provider.name)).toEqual(["Argavis AI"])
         expect((yield* models.available()).map((model) => model.name).toSorted()).toEqual(["ARGAVIS AI", "ARGAVIS AI Flash"])
+        // The app shows only the newest model of each family, so each Argavis model needs its own.
+        expect(new Set((yield* models.available()).map((model) => model.family)).size).toBe(2)
         const model = yield* models.default()
         expect(model).toMatchObject({
           providerID: "argavis",
