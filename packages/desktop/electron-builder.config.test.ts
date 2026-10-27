@@ -56,6 +56,8 @@ test.each(channels)("channel identity for $channel", ({ channel, appId, productN
   expect(config.linux?.desktop?.entry?.StartupWMClass).toBe(appId)
   // No channel may embed an update feed: packaged builds must never fetch or install OpenCode releases.
   expect(config.publish).toBeNull()
+  // Every channel claims only its own scheme, so installing Argavis never takes over OpenCode's deep links.
+  expect(config.protocols).toMatchObject({ schemes: ["argavis"] })
 
   for (const fpm of [config.deb?.fpm, config.rpm?.fpm]) {
     expect(fpm).toEqual([expect.stringContaining(`/usr/share/metainfo/${appId}.metainfo.xml`)])

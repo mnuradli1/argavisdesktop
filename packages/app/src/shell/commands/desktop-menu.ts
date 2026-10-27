@@ -272,22 +272,8 @@ export const DESKTOP_MENU: DesktopMenu[] = [
   {
     id: "help",
     labelKey: "desktop.menu.help",
-    items: [
-      { type: "item", labelKey: "desktop.menu.documentation", href: "https://opencode.ai/docs" },
-      { type: "item", labelKey: "desktop.menu.supportForum", href: "https://discord.com/invite/opencode" },
-      { type: "item", labelKey: "desktop.menu.exportLogs", command: "logs.export" },
-      { type: "separator" },
-      {
-        type: "item",
-        labelKey: "desktop.menu.shareFeedback",
-        href: "https://github.com/anomalyco/opencode/issues/new?template=feature_request.yml",
-      },
-      {
-        type: "item",
-        labelKey: "desktop.menu.reportBug",
-        href: "https://github.com/anomalyco/opencode/issues/new?template=bug_report.yml",
-      },
-    ],
+    // Argavis has no docs, forum or issue tracker, so Help only offers log export.
+    items: [{ type: "item", labelKey: "desktop.menu.exportLogs", command: "logs.export" }],
   },
 ]
 

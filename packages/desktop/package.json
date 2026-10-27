@@ -7,7 +7,7 @@
   "homepage": "https://github.com/mnuradli1/argavisdesktop",
   "author": {
     "name": "Argavis",
-    "email": "hello@opencode.ai"
+    "email": "mnuradli1@users.noreply.github.com"
   },
   "scripts": {
     "typecheck": "tsgo -b",
