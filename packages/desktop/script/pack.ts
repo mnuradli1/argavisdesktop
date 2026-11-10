@@ -55,6 +55,8 @@ if (!app && os === "mac") {
 
 if (!app && os === "win") {
   await $`bunx electron-builder ${flags} --dir`
+  // Upstream writes resources/app-update.yml into its --dir builds here. Argavis ships no update feed
+  // (`publish: null`), so no packaged build carries one.
   await cp(path.join("dist", cli.cpu === "arm64" ? "win-arm64-unpacked" : "win-unpacked"), path.join(out, "app"), {
     recursive: true,
   })

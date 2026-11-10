@@ -165,3 +165,44 @@ test("restores each existing session's model and variant when switching tabs", a
   await expect(modelControl).toHaveText("Argavis AI / ARGAVIS AI")
   await expect(variant).toHaveText("high")
 })
+
+test("keeps a variant picked in another directory's session with that session across a reload", async ({ page }) => {
+  // The session view stays mounted while its tabs switch between sessions in different directories.
+  const sessions = [
+    { name: "Home", directory: "C:/OpenCode/ModelHome", model: "argavis-ai" },
+    { name: "Away", directory: "C:/OpenCode/ModelAway", model: "argavis-ai-flash" },
+  ].map((item) => ({
+    id: `ses_model_${item.name.toLowerCase()}`,
+    title: `${item.name} session`,
+    directory: item.directory,
+    model: { id: item.model, providerID: "argavis", variant: "low" },
+  }))
+
+  await openSession(page, {
+    name: "ModelHome",
+    sessions,
+    provider: argavis,
+  })
+
+  const [home, away] = sessions.map((session) => sessionHref(session.id))
+  const composer = page.locator('[data-component="composer"]')
+  const modelControl = composer.locator('[data-action="composer-model"]')
+  const variant = composer.getByRole("button", { name: "Choose model variant", exact: true })
+  await expect(modelControl).toHaveText("Argavis AI / ARGAVIS AI")
+  await page.locator(`[data-titlebar-tab-link][href="${away}"]`).click()
+  await expect(page).toHaveURL(away!)
+  await expect(modelControl).toHaveText("Argavis AI / ARGAVIS AI Flash")
+  await expect(variant).toHaveText("low")
+  await variant.click()
+  await page.getByRole("menuitemradio", { name: "high", exact: true }).click()
+  await expect(variant).toHaveText("high")
+
+  await page.reload()
+  await expect(modelControl).toHaveText("Argavis AI / ARGAVIS AI Flash")
+  await expect(variant).toHaveText("high")
+
+  await page.locator(`[data-titlebar-tab-link][href="${home}"]`).click()
+  await expect(page).toHaveURL(home!)
+  await expect(modelControl).toHaveText("Argavis AI / ARGAVIS AI")
+  await expect(variant).toHaveText("low")
+})

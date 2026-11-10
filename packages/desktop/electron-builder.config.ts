@@ -1,4 +1,4 @@
-import { readdir, stat } from "node:fs/promises"
+import { copyFile, readdir, stat } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -19,9 +19,9 @@ const rpmNoBuildIdLinksFpm = "--rpm-rpmbuild-define=_build_id_links none"
 const metainfoFpm = (appId: string) =>
   `${path.join(packageDir, "resources", `${appId}.metainfo.xml`)}=/usr/share/metainfo/${appId}.metainfo.xml`
 
-// Beta packages every commit for the team, so it trades about 5% (deb) and 17% (rpm) larger files for xz -1, which
+// Dev and beta package every commit, so they trade about 5% (deb) and 17% (rpm) larger files for xz -1, which
 // compresses the payload about 3x faster than the deb default (-3) and 5x faster than the rpm default (-9).
-const betaCompressionFpm = (target: "deb" | "rpm") => [`--${target}-compression-level`, "1"]
+const previewCompressionFpm = (target: "deb" | "rpm") => [`--${target}-compression-level`, "1"]
 
 function resolveChannel() {
   const raw = process.env.OPENCODE_CHANNEL
@@ -122,6 +122,11 @@ const getBase = (appId: string): Configuration => {
 
       if ((await stat(version)).size === 0) throw new Error(`Bundled CLI version must be a non-empty file: ${version}`)
 
+      // With an Icon Composer mac.icon, electron-builder bundles the ICNS that actool generates as the pre-macOS 26
+      // fallback. That one tops out at 256px and draws a light ring around the squircle, so ship ours instead.
+      if (context.electronPlatformName === "darwin")
+        await copyFile(path.join(packageDir, "resources/icons/icon.icns"), path.join(resources, "icon.icns"))
+
       if (context.electronPlatformName !== "win32") return
 
       const prebuilds = path.join(
@@ -152,6 +157,13 @@ const getBase = (appId: string): Configuration => {
       icon: `resources/icons/icon.icns`,
       extendInfo: {
         NSMicrophoneUsageDescription: DESKTOP_NATIVE_ENGLISH["desktop.microphoneUsage"],
+        // The CLI server and its terminals run as children of the app, so macOS asks for their access to
+        // these protected locations in the app's name. The prompt shows the description (#56479).
+        NSDocumentsFolderUsageDescription: DESKTOP_NATIVE_ENGLISH["desktop.documentsFolderUsage"],
+        NSDesktopFolderUsageDescription: DESKTOP_NATIVE_ENGLISH["desktop.desktopFolderUsage"],
+        NSDownloadsFolderUsageDescription: DESKTOP_NATIVE_ENGLISH["desktop.downloadsFolderUsage"],
+        NSNetworkVolumesUsageDescription: DESKTOP_NATIVE_ENGLISH["desktop.networkVolumesUsage"],
+        NSRemovableVolumesUsageDescription: DESKTOP_NATIVE_ENGLISH["desktop.removableVolumesUsage"],
         NSAutoFillRequiresTextContentTypeForOneTimeCodeOnMac: true,
       },
       target: ["dmg", "zip"],
@@ -203,8 +215,11 @@ export function getConfig() {
         ...base,
         appId,
         productName: "Argavis Dev",
-        deb: { fpm: [metainfoFpm(appId)] },
-        rpm: { packageName: "argavis-dev", fpm: [rpmNoBuildIdLinksFpm, metainfoFpm(appId)] },
+        deb: { fpm: [...previewCompressionFpm("deb"), metainfoFpm(appId)] },
+        rpm: {
+          packageName: "argavis-dev",
+          fpm: [rpmNoBuildIdLinksFpm, ...previewCompressionFpm("rpm"), metainfoFpm(appId)],
+        },
       }
     }
 
@@ -214,10 +229,10 @@ export function getConfig() {
         appId,
         productName: "Argavis Beta",
         protocols: { name: "Argavis Beta", schemes: ["argavis"] },
-        deb: { fpm: [...betaCompressionFpm("deb"), metainfoFpm(appId)] },
+        deb: { fpm: [...previewCompressionFpm("deb"), metainfoFpm(appId)] },
         rpm: {
           packageName: "argavis-beta",
-          fpm: [rpmNoBuildIdLinksFpm, ...betaCompressionFpm("rpm"), metainfoFpm(appId)],
+          fpm: [rpmNoBuildIdLinksFpm, ...previewCompressionFpm("rpm"), metainfoFpm(appId)],
         },
       }
     }
@@ -228,6 +243,8 @@ export function getConfig() {
         appId,
         productName: "Argavis",
         protocols: { name: "Argavis", schemes: ["argavis"] },
+        // Upstream draws the prod macOS 26 icon from an Icon Composer package holding OpenCode's artwork. Argavis
+        // removed that package and has none of its own yet, so every channel keeps the ICNS.
         deb: { fpm: [metainfoFpm(appId)] },
         rpm: { packageName: "argavis", fpm: [rpmNoBuildIdLinksFpm, metainfoFpm(appId)] },
       }
