@@ -1,26 +1,68 @@
 import { showToast } from "@opencode/ui/toast"
-import { lazy, onCleanup, Suspense } from "solid-js"
+import { createSignal, lazy, onCleanup, Suspense, untrack } from "solid-js"
 import { Command, SettingsPage, TitlebarItem, type SetupContext, type Plugin } from "@opencode/plugin/gui"
 import { onIdle } from "@opencode/plugin/gui/builtin"
 import { Updater } from "@opencode/plugin/gui/updater"
 import { updaterAction } from "./action"
+import {
+  ACTION_CHUNK_TIMEOUT_MS,
+  initialWindowUpdater,
+  transitionWindowUpdater,
+  type WindowUpdaterEffect,
+  type WindowUpdaterEvent,
+} from "./window-machine"
+import { webUpdates } from "./web"
+import { initWhatsNew } from "./whats-new-machine"
 import type definition from "./index"
 
 const setup: Plugin.Setup<typeof definition> = (ctx) => {
   whatsNew(ctx)
   betaNotes(ctx)
 
-  if (!ctx.desktop) return
+  if (!ctx.desktop) return webUpdates(ctx)
   const updater = ctx.main(Updater)
   // Undefined until main's updater is up and has sent its state, and again while it is gone.
   const state = () => updater.state()
+  const [windowState, setWindowState] = createSignal(initialWindowUpdater)
 
-  const act = (name: "check" | "install") => {
-    if (state()) return void import("./actions").then((module) => module[name](ctx, updater))
+  const dispatchWindow = (event: WindowUpdaterEvent) => {
+    const next = transitionWindowUpdater(untrack(windowState), event)
 
-    // Not loaded yet, or not active (failed, or not on this platform): nothing can check or install.
-    showToast({ title: ctx.t("common.requestFailed") })
+    if (next.state !== untrack(windowState)) setWindowState(next.state)
+    next.effects.forEach(runWindow)
   }
+
+  const runWindow = (effect: WindowUpdaterEffect) => {
+    if (effect.type === "toast-failed")
+      return void showToast({ title: ctx.t("common.requestFailed"), description: effect.message })
+    const attempt = effect.attempt
+    const chunk = Promise.withResolvers<never>()
+    const timer = setTimeout(() => chunk.reject(new Error()), ACTION_CHUNK_TIMEOUT_MS)
+
+    void Promise.race([import("./actions"), chunk.promise])
+      .finally(() => clearTimeout(timer))
+      .then(
+        (module) => {
+          if (ctx.signal.aborted) return
+
+          return Promise.try(() => module[effect.action](ctx, updater)).finally(() =>
+            dispatchWindow({ type: "action.settled", attempt }),
+          )
+        },
+        (cause: unknown) =>
+          dispatchWindow({
+            type: "action.failed",
+            attempt,
+            message: cause instanceof Error && cause.message ? cause.message : undefined,
+          }),
+      )
+  }
+
+  onCleanup(() => dispatchWindow({ type: "disposed" }))
+
+  // Main missing (not loaded yet, failed, or not on this platform) answers that nothing can check or install.
+  const act = (name: "check" | "install") =>
+    dispatchWindow({ type: "action.requested", action: name, available: state() !== undefined })
 
   const Section = lazy(() => import("./section"))
   // Settings rows are small; load them while idle so settings opens without a blank row.
@@ -36,7 +78,7 @@ const setup: Plugin.Setup<typeof definition> = (ctx) => {
     return {
       id: "update",
       label: ctx.t("status.label"),
-      title: ctx.t(updaterAction(current).label),
+      title: ctx.t(updaterAction(current, windowState()).label),
       busy: installing,
       run: () => act("install"),
     }
@@ -57,9 +99,9 @@ const setup: Plugin.Setup<typeof definition> = (ctx) => {
     render: () => (
       <Suspense>
         <Section
-          state={state}
+          action={() => updaterAction(state(), windowState())}
           run={() => {
-            const run = updaterAction(state()).run
+            const run = updaterAction(state(), windowState()).run
 
             if (run) act(run)
           }}
@@ -86,7 +128,7 @@ function betaNotes(ctx: SetupContext<typeof definition>) {
 
   ctx.add(SettingsPage, {
     id: "whats-new",
-    icon: "flask",
+    icon: "outline-list-changelog",
     group: "about",
     get title() {
       return ctx.t("beta.title")
@@ -107,18 +149,28 @@ function betaNotes(ctx: SetupContext<typeof definition>) {
  * notes describe OpenCode releases, so an update only remembers the version (and commit) it reached.
  */
 function whatsNew(ctx: SetupContext<typeof definition>) {
-  const version = ctx.app.version
   const seen = ctx.stores.seen
 
-  if (!version || seen.value.version === version) return
+  // Starting with release notes off is the machine's remember-only path, so it never asks for the OpenCode changelog
+  // or the beta dialog. Only that effect is run here: a load could not start even if the machine asked for one.
+  const start = initWhatsNew({
+    version: ctx.app.version,
+    commit: import.meta.env.OPENCODE_COMMIT,
+    channel: ctx.app.channel === "beta" ? "beta" : "stable",
+    previousVersion: seen.value.version,
+    previousCommit: seen.value.commit,
+    enabled: false,
+  })
 
-  const commit = import.meta.env.OPENCODE_COMMIT
+  start.effects.forEach((effect) => {
+    if (effect.type !== "mark-seen") return
 
-  seen.update((draft) => {
-    draft.version = version
+    seen.update((draft) => {
+      draft.version = effect.version
 
-    // Remember the build's commit too, as upstream does, so the stored state stays compatible.
-    if (commit) draft.commit = commit
+      // Remember the build's commit too, as upstream does, so the stored state stays compatible.
+      if (effect.commit) draft.commit = effect.commit
+    })
   })
 }
 

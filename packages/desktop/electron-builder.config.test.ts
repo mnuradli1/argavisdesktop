@@ -79,6 +79,24 @@ test.each(channels)("channel identity for $channel", ({ channel, appId, productN
   expect(config.deb?.fpm).not.toContain("--rpm-rpmbuild-define=_build_id_links none")
 })
 
+test.each(channels)("macOS bundle for $channel", ({ channel }) => {
+  const config = load(channel)
+  // Every channel draws its icon from the Argavis ICNS: the Icon Composer package under `icons/prod` is OpenCode's.
+  expect(config.mac?.icon).toBe("resources/icons/icon.icns")
+  expect(config.dmg?.icon).toBeUndefined()
+  expect(config.mac?.target).toEqual(["dmg", "zip"])
+
+  for (const key of [
+    "NSMicrophoneUsageDescription",
+    "NSDocumentsFolderUsageDescription",
+    "NSDesktopFolderUsageDescription",
+    "NSDownloadsFolderUsageDescription",
+    "NSNetworkVolumesUsageDescription",
+    "NSRemovableVolumesUsageDescription",
+  ])
+    expect(config.mac?.extendInfo?.[key], key).toMatch(/\S/)
+})
+
 test("shared packaging defaults", async () => {
   const config = load("dev")
   // Packaging runs in secretless build jobs; the release workflow signs and notarizes afterwards.
