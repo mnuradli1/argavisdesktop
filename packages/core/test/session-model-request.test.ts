@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { Message, ToolMessage, ToolResultPart, Media, UserMessage } from "@opencode/ai/effect"
-import { boundImages, unsupportedParts } from "@opencode/core/session/model-request"
+import { boundImageCount, boundImages, unsupportedParts } from "@opencode/core/session/model-request"
 
 const capabilities = (input: string[]) => ({ tools: true, input, output: ["text"] })
 
@@ -244,5 +244,45 @@ describe("SessionModelRequest.boundImages", () => {
         value: [{ type: "text" }, { type: "file", name: "second.png" }],
       },
     })
+  })
+})
+
+describe("SessionModelRequest.boundImageCount", () => {
+  const image = (name: string) =>
+    Message.user({ type: "media", media: Media.base64("aGVsbG8=", "image/png"), filename: name })
+
+  test("preserves a history at the limit", () => {
+    const messages = Array.from({ length: 4 }, (_, i) => image(`${i}.png`))
+    expect(boundImageCount(messages, 4)).toBe(messages)
+  })
+
+  test("keeps only the most recent images, counting those in tool results", () => {
+    const messages = [
+      image("0.png"),
+      Message.tool(
+        ToolResultPart.make({
+          id: "call_1",
+          name: "read",
+          result: {
+            type: "content",
+            value: [
+              { type: "file", uri: "data:image/png;base64,aGVsbG8=", mime: "image/png", name: "1.png" },
+              { type: "file", uri: "data:image/png;base64,aGVsbG8=", mime: "image/png", name: "2.png" },
+            ],
+          },
+        }),
+      ),
+      image("3.png"),
+      image("4.png"),
+      image("5.png"),
+    ]
+    const result = boundImageCount(messages, 4)
+
+    expect(result[0]?.content).toEqual([Message.text(expect.stringContaining("image was removed"))])
+    expect(result[1]?.content[0]).toMatchObject({
+      type: "tool-result",
+      result: { type: "content", value: [{ type: "text" }, { type: "file", name: "2.png" }] },
+    })
+    expect(result.slice(2)).toEqual(messages.slice(2))
   })
 })
