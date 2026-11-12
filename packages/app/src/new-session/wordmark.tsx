@@ -1,4 +1,6 @@
 import { Logo } from "@opencode/ui/logo"
+import type { Accessor } from "solid-js"
+import type { WordmarkEvent, WordmarkState } from "./wordmark-machine"
 import "./wordmark.css"
 
 /** The lodger curled up as the brick breaker ball. Positions are the ball's centre, relative to the new session panel. */
@@ -17,17 +19,16 @@ export type LodgerBall = {
 
 /**
  * Argavis shows the flat ARGAVIS wordmark with a single shimmer. Upstream's pull-the-pin lodger and pin board are
- * drawn from the OpenCode letterforms, so the lodger that opens them is not mounted; the props keep upstream's
- * signature so the pin board and brick breaker wiring stays mergeable.
+ * drawn from the OpenCode letterforms, so the lodger that opens them is not mounted and no wordmark event is ever
+ * dispatched; the props keep upstream's signature so the pin board and brick breaker wiring stays mergeable.
  */
 export function NewSessionWordmark(props: {
   ref: (element: HTMLDivElement) => void
-  pins?: boolean
+  state: Accessor<WordmarkState>
+  onEvent: (event: WordmarkEvent) => void
+  /** Upstream: dropping the lodger on the composer starts Brick Breaker. */
+  play?: boolean
   sound?: () => boolean
-  onOpen?: () => void
-  onClose?: () => void
-  onFlat?: () => void
-  onPlay?: (ball: LodgerBall) => void
 }) {
   return (
     <div

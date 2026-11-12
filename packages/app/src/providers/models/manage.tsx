@@ -1,4 +1,5 @@
 import { Dialog, DialogBody, DialogHeader, DialogTitleGroup } from "@opencode/ui/dialog"
+import { Icon } from "@opencode/ui/icon"
 import { Switch } from "@opencode/ui/switch"
 import { TextInput } from "@opencode/ui/text-input"
 import { useFilteredList } from "@opencode/ui/hooks"
@@ -88,7 +89,7 @@ export const DialogManageModels: Component = () => {
   }
 
   return (
-    <Dialog size="large" variant="settings" class="settings-manage-models-dialog">
+    <Dialog size="large" variant="settings" class="settings-manage-models-dialog search-dialog">
       <DialogHeader hideClose={true} closeLabel={language.t("common.close")}>
         <DialogTitleGroup
           title={language.t("dialog.model.manage")}
@@ -96,14 +97,15 @@ export const DialogManageModels: Component = () => {
         />
       </DialogHeader>
       <DialogBody class="flex min-h-0 flex-1 flex-col">
-        <div class="manage-models-search">
+        <div class="manage-models-search search-dialog-search">
           <TextInput
             type="search"
             appearance="base"
             class="!w-full self-stretch"
+            leadingIcon={<Icon name="magnifying-glass" />}
             value={list.filter()}
             onInput={(event) => list.onInput(event.currentTarget.value)}
-            placeholder={language.t("dialog.model.search.placeholder")}
+            placeholder={language.t("common.search.placeholder")}
             spellcheck={false}
             autocorrect="off"
             autocomplete="off"
